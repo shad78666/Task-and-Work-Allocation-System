@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manage Tasks - Task Work Allocation System</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        /* Specific styles */
+        .layout-container { display: flex; min-height: 100vh; }
+        .sidebar { width: 250px; background: rgba(15, 23, 42, 0.8); backdrop-filter: var(--glass-blur); border-right: 1px solid var(--border-color); padding: 2rem 1rem; display: flex; flex-direction: column; }
+        .sidebar-logo { font-size: 1.25rem; font-weight: 700; color: var(--accent-color); margin-bottom: 2rem; text-align: center; }
+        .nav-link { display: block; padding: 0.75rem 1rem; color: var(--text-main); text-decoration: none; border-radius: 8px; margin-bottom: 0.5rem; transition: all 0.3s ease; }
+        .nav-link:hover, .nav-link.active { background-color: var(--accent-color); color: white; }
+        .logout-btn { margin-top: auto; background-color: rgba(239, 68, 68, 0.2); color: var(--danger); border: 1px solid rgba(239, 68, 68, 0.3); }
+        .main-content { flex: 1; padding: 2rem; overflow-y: auto; }
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; }
+        
+        .filters-container { display: flex; gap: 1rem; margin-bottom: 1rem; align-items: center; flex-wrap: wrap; }
+        .filters-container input, .filters-container select { max-width: 250px; }
+
+        /* Table styles */
+        .table-container { width: 100%; overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; text-align: left; }
+        th, td { padding: 1rem; border-bottom: 1px solid var(--border-color); }
+        th { color: var(--text-muted); font-weight: 500; text-transform: uppercase; font-size: 0.875rem; }
+        tr:hover { background: rgba(255, 255, 255, 0.05); }
+        
+        .action-btn { padding: 0.4rem 0.8rem; font-size: 0.875rem; border: none; border-radius: 4px; cursor: pointer; margin-right: 0.5rem; }
+        .btn-edit { background: rgba(59, 130, 246, 0.2); color: var(--accent-color); }
+        .btn-edit:hover { background: var(--accent-color); color: white; }
+        .btn-delete { background: rgba(239, 68, 68, 0.2); color: var(--danger); }
+        .btn-delete:hover { background: var(--danger); color: white; }
+
+        .status-badge { display: inline-block; padding: 0.25rem 0.5rem; border-radius: 12px; font-size: 0.75rem; font-weight: 600; }
+        .status-Pending { background: rgba(245, 158, 11, 0.2); color: var(--warning); border: 1px solid rgba(245, 158, 11, 0.5); }
+        .status-InProgress { background: rgba(59, 130, 246, 0.2); color: var(--accent-color); border: 1px solid rgba(59, 130, 246, 0.5); }
+        .status-Completed { background: rgba(16, 185, 129, 0.2); color: var(--success); border: 1px solid rgba(16, 185, 129, 0.5); }
+
+        /* Modal styles */
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); backdrop-filter: blur(5px); justify-content: center; align-items: center; z-index: 1000; }
+        .modal.active { display: flex; }
+        .modal-content { width: 100%; max-width: 500px; }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; }
+        .close-btn { background: none; border: none; color: var(--text-muted); font-size: 1.5rem; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <div class="layout-container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-logo">TaskAllocate</div>
+            <nav>
+                <a href="admin-dashboard.html" class="nav-link">Dashboard</a>
+                <a href="admin-employees.html" class="nav-link">Employees</a>
+                <a href="admin-tasks.html" class="nav-link active">Tasks</a>
+            </nav>
+            <button onclick="logoutUser()" class="btn logout-btn" style="width: 100%">Logout</button>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <header class="header">
+                <div>
+                    <h1>Manage Tasks</h1>
+                    <p>Create, update, and monitor assigned tasks.</p>
+                </div>
+                <button class="btn btn-primary" onclick="openModal()">+ Assign Task</button>
+            </header>
+
+            <div class="filters-container">
+                <input type="text" id="searchTask" class="form-control" placeholder="Search tasks by title or assignee..." oninput="renderTasks()">
+                <select id="filterStatus" class="form-control" onchange="renderTasks()">
+                    <option value="">All Statuses</option>
+                    <option value="Pending">Pending</option>
+                    <option value="In Progress">In Progress</option>
+                    <option value="Completed">Completed</option>
+                </select>
+            </div>
+
+            <div class="glass-panel table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Task ID</th>
+                            <th>Title</th>
+                            <th>Assigned To</th>
+                            <th>Deadline</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="taskTableBody">
+                        <!-- Task rows generated by JS -->
+                    </tbody>
+                </table>
+            </div>
+        </main>
+    </div>
+
+    <!-- Assign Task Modal -->
+    <div class="modal" id="addTaskModal">
+        <div class="glass-panel modal-content">
+            <div class="modal-header">
+                <h2>Assign New Task</h2>
+                <button class="close-btn" onclick="closeModal()">&times;</button>
+            </div>
+            <form id="addTaskForm">
+                <div class="form-group">
+                    <label class="form-label" for="taskTitle">Task Title</label>
+                    <input type="text" id="taskTitle" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="taskDesc">Description</label>
+                    <textarea id="taskDesc" class="form-control" rows="3" required></textarea>
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="taskAssignee">Assign To Employee</label>
+                    <select id="taskAssignee" class="form-control" required>
+                        <!-- Options generated by JS -->
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="taskDeadline">Deadline</label>
+                    <input type="date" id="taskDeadline" class="form-control" required>
+                </div>
+                <button type="submit" class="btn btn-primary" style="width: 100%">Assign Task</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Edit Task Modal -->
+    <div class="modal" id="editTaskModal">
+        <div class="glass-panel modal-content">
+            <div class="modal-header">
+                <h2>Edit Task</h2>
+                <button class="close-btn" onclick="closeEditModal()">&times;</button>
+            </div>
+            <form id="editTaskForm">
+                <input type="hidden" id="editTaskId">
+                <div class="form-group">
+                    <label class="form-label" for="editTaskTitle">Task Title</label>
+                    <input type="text" id="editTaskTitle" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="editTaskDesc">Description</label>
+                    <textarea id="editTaskDesc" class="form-control" rows="3" required></textarea>
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="editTaskAssignee">Assign To Employee</label>
+                    <select id="editTaskAssignee" class="form-control" required>
+                        <!-- Options generated by JS -->
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="editTaskDeadline">Deadline</label>
+                    <input type="date" id="editTaskDeadline" class="form-control" required>
+                </div>
+                <button type="submit" class="btn btn-primary" style="width: 100%">Save Changes</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="js/storage.js"></script>
+    <script src="js/auth.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const user = Auth.requireAuth(['admin']);
+            if (!user) return;
+            populateEmployeesDropdown('taskAssignee');
+            populateEmployeesDropdown('editTaskAssignee');
+            renderTasks();
+        });
+
+        function populateEmployeesDropdown(selectId) {
+            const users = Storage.get('users') || [];
+            const employees = users.filter(u => u.role === 'employee');
+            const select = document.getElementById(selectId);
+            
+            if (employees.length === 0) {
+                select.innerHTML = '<option value="">No employees available</option>';
+                select.disabled = true;
+            } else {
+                select.innerHTML = '<option value="" disabled selected>Select an employee</option>' + 
+                    employees.map(emp => `<option value="${emp.id}">${emp.name} (${emp.username})</option>`).join('');
+                select.disabled = false;
+            }
+        }
+
+        function renderTasks() {
+            let tasks = Storage.get('tasks') || [];
+            const users = Storage.get('users') || [];
+            const tbody = document.getElementById('taskTableBody');
+            
+            const searchTerm = document.getElementById('searchTask').value.toLowerCase();
+            const filterStatus = document.getElementById('filterStatus').value;
+
+            // Apply Filters
+            tasks = tasks.filter(task => {
+                const assignee = users.find(u => u.id === task.assigneeId);
+                const assigneeName = assignee ? assignee.name.toLowerCase() : '';
+                const titleMatch = task.title.toLowerCase().includes(searchTerm) || assigneeName.includes(searchTerm);
+                const statusMatch = filterStatus === "" || task.status === filterStatus;
+                
+                return titleMatch && statusMatch;
+            });
+
+            if (tasks.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: var(--text-muted);">No tasks found.</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = tasks.map(task => {
+                const assignee = users.find(u => u.id === task.assigneeId);
+                const assigneeName = assignee ? assignee.name : 'Unknown';
+                const statusClass = 'status-' + task.status.replace(' ', '');
+                
+                return `
+                <tr>
+                    <td>${task.id}</td>
+                    <td>${task.title}</td>
+                    <td>${assigneeName}</td>
+                    <td>${task.deadline}</td>
+                    <td><span class="status-badge ${statusClass}">${task.status}</span></td>
+                    <td>
+                        <button class="action-btn btn-edit" onclick="openEditModal('${task.id}')">Edit</button>
+                        <button class="action-btn btn-delete" onclick="deleteTask('${task.id}')">Delete</button>
+                    </td>
+                </tr>
+            `}).join('');
+        }
+
+        // Add Modal functions
+        function openModal() { document.getElementById('addTaskModal').classList.add('active'); }
+        function closeModal() { document.getElementById('addTaskModal').classList.remove('active'); document.getElementById('addTaskForm').reset(); }
+
+        document.getElementById('addTaskForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const title = document.getElementById('taskTitle').value.trim();
+            const desc = document.getElementById('taskDesc').value.trim();
+            const assigneeId = document.getElementById('taskAssignee').value;
+            const deadline = document.getElementById('taskDeadline').value;
+
+            if (!assigneeId) {
+                alert("Please select an employee.");
+                return;
+            }
+
+            const tasks = Storage.get('tasks') || [];
+
+            const newTask = {
+                id: 'TSK-' + Math.floor(Math.random() * 10000).toString().padStart(4, '0'),
+                title,
+                description: desc,
+                assigneeId,
+                deadline,
+                status: 'Pending'
+            };
+
+            tasks.push(newTask);
+            Storage.save('tasks', tasks);
+            closeModal();
+            renderTasks();
+        });
+
+        // Edit Modal functions
+        window.openEditModal = (taskId) => {
+            const tasks = Storage.get('tasks') || [];
+            const task = tasks.find(t => t.id === taskId);
+            if (!task) return;
+
+            document.getElementById('editTaskId').value = task.id;
+            document.getElementById('editTaskTitle').value = task.title;
+            document.getElementById('editTaskDesc').value = task.description;
+            document.getElementById('editTaskAssignee').value = task.assigneeId;
+            document.getElementById('editTaskDeadline').value = task.deadline;
+
+            document.getElementById('editTaskModal').classList.add('active');
+        };
+
+        window.closeEditModal = () => {
+            document.getElementById('editTaskModal').classList.remove('active');
+            document.getElementById('editTaskForm').reset();
+        };
+
+        document.getElementById('editTaskForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const id = document.getElementById('editTaskId').value;
+            const title = document.getElementById('editTaskTitle').value.trim();
+            const desc = document.getElementById('editTaskDesc').value.trim();
+            const assigneeId = document.getElementById('editTaskAssignee').value;
+            const deadline = document.getElementById('editTaskDeadline').value;
+
+            let tasks = Storage.get('tasks') || [];
+            const index = tasks.findIndex(t => t.id === id);
+            
+            if (index !== -1) {
+                tasks[index].title = title;
+                tasks[index].description = desc;
+                tasks[index].assigneeId = assigneeId;
+                tasks[index].deadline = deadline;
+                Storage.save('tasks', tasks);
+            }
+            
+            closeEditModal();
+            renderTasks();
+        });
+
+        window.deleteTask = (taskId) => {
+            if(confirm('Are you sure you want to delete this task?')) {
+                let tasks = Storage.get('tasks') || [];
+                tasks = tasks.filter(t => t.id !== taskId);
+                Storage.save('tasks', tasks);
+                renderTasks();
+            }
+        };
+
+        window.logoutUser = () => { Auth.logout(); };
+    </script>
+</body>
+</html>

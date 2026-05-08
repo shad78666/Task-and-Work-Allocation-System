@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Employee Dashboard - Task Work Allocation System</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        /* Specific styles */
+        .layout-container { display: flex; min-height: 100vh; }
+        .sidebar { width: 250px; background: rgba(15, 23, 42, 0.8); backdrop-filter: var(--glass-blur); border-right: 1px solid var(--border-color); padding: 2rem 1rem; display: flex; flex-direction: column; }
+        .sidebar-logo { font-size: 1.25rem; font-weight: 700; color: var(--accent-color); margin-bottom: 2rem; text-align: center; }
+        .nav-link { display: block; padding: 0.75rem 1rem; color: var(--text-main); text-decoration: none; border-radius: 8px; margin-bottom: 0.5rem; transition: all 0.3s ease; }
+        .nav-link:hover, .nav-link.active { background-color: var(--accent-color); color: white; }
+        .logout-btn { margin-top: auto; background-color: rgba(239, 68, 68, 0.2); color: var(--danger); border: 1px solid rgba(239, 68, 68, 0.3); }
+        .main-content { flex: 1; padding: 2rem; overflow-y: auto; }
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; }
+        
+        /* Stats Grid */
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem; margin-bottom: 2rem; }
+        .stat-card { padding: 1.5rem; text-align: center; }
+        .stat-value { font-size: 2.5rem; font-weight: 700; color: var(--accent-color); margin-bottom: 0.5rem; }
+        .stat-label { color: var(--text-muted); font-size: 0.875rem; text-transform: uppercase; letter-spacing: 1px; }
+
+        /* Task Cards */
+        .tasks-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .task-card {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .task-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+        }
+
+        .task-title {
+            font-size: 1.125rem;
+            font-weight: 600;
+        }
+
+        .task-desc {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            line-height: 1.5;
+            flex: 1;
+        }
+
+        .task-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            padding-top: 1rem;
+            margin-top: 0.5rem;
+        }
+
+        .deadline {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+        }
+
+        .status-select {
+            background: rgba(15, 23, 42, 0.6);
+            color: var(--text-main);
+            border: 1px solid var(--border-color);
+            padding: 0.4rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.875rem;
+            cursor: pointer;
+        }
+
+        .status-select:focus {
+            outline: none;
+            border-color: var(--accent-color);
+        }
+
+        .status-badge { display: inline-block; padding: 0.25rem 0.5rem; border-radius: 12px; font-size: 0.75rem; font-weight: 600; }
+        .status-Pending { background: rgba(245, 158, 11, 0.2); color: var(--warning); border: 1px solid rgba(245, 158, 11, 0.5); }
+        .status-InProgress { background: rgba(59, 130, 246, 0.2); color: var(--accent-color); border: 1px solid rgba(59, 130, 246, 0.5); }
+        .status-Completed { background: rgba(16, 185, 129, 0.2); color: var(--success); border: 1px solid rgba(16, 185, 129, 0.5); }
+
+    </style>
+</head>
+<body>
+    <div class="layout-container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-logo">TaskAllocate</div>
+            <nav>
+                <a href="employee-dashboard.html" class="nav-link active">My Tasks</a>
+            </nav>
+            <button onclick="logoutUser()" class="btn logout-btn" style="width: 100%">Logout</button>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <header class="header">
+                <div>
+                    <h1>My Tasks</h1>
+                    <p>Welcome back, <span id="employeeName">Employee</span></p>
+                </div>
+            </header>
+
+            <div class="stats-grid">
+                <div class="glass-panel stat-card">
+                    <div class="stat-value" id="myTotalTasks">0</div>
+                    <div class="stat-label">Total Assigned</div>
+                </div>
+                <div class="glass-panel stat-card">
+                    <div class="stat-value" id="myPendingTasks" style="color: var(--warning);">0</div>
+                    <div class="stat-label">Pending / Progress</div>
+                </div>
+                <div class="glass-panel stat-card">
+                    <div class="stat-value" id="myCompletedTasks" style="color: var(--success);">0</div>
+                    <div class="stat-label">Completed</div>
+                </div>
+            </div>
+
+            <h2 style="margin-bottom: 1.5rem;">Assigned Tasks</h2>
+            <div id="tasksContainer" class="tasks-grid">
+                <!-- Task Cards will be rendered here -->
+            </div>
+
+        </main>
+    </div>
+
+    <!-- Scripts -->
+    <script src="js/storage.js"></script>
+    <script src="js/auth.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const user = Auth.requireAuth(['employee']);
+            if (!user) return;
+
+            document.getElementById('employeeName').textContent = user.name || 'Employee';
+            
+            renderEmployeeTasks(user.id);
+        });
+
+        function renderEmployeeTasks(employeeId) {
+            const tasks = Storage.get('tasks') || [];
+            const myTasks = tasks.filter(t => t.assigneeId === employeeId);
+            
+            // Update Stats
+            const completed = myTasks.filter(t => t.status === 'Completed');
+            document.getElementById('myTotalTasks').textContent = myTasks.length;
+            document.getElementById('myCompletedTasks').textContent = completed.length;
+            document.getElementById('myPendingTasks').textContent = myTasks.length - completed.length;
+
+            const container = document.getElementById('tasksContainer');
+            
+            if (myTasks.length === 0) {
+                container.innerHTML = `
+                    <div class="glass-panel" style="grid-column: 1 / -1; text-align: center;">
+                        <p style="color: var(--text-muted);">You have no tasks assigned at the moment.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = myTasks.map(task => {
+                const statusClass = 'status-' + task.status.replace(' ', '');
+                return `
+                <div class="glass-panel task-card">
+                    <div class="task-header">
+                        <div class="task-title">${task.title}</div>
+                        <span class="status-badge ${statusClass}">${task.status}</span>
+                    </div>
+                    <div class="task-desc">${task.description}</div>
+                    <div class="task-footer">
+                        <div class="deadline">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+                            ${task.deadline}
+                        </div>
+                        <select class="status-select" onchange="updateTaskStatus('${task.id}', this.value)">
+                            <option value="Pending" ${task.status === 'Pending' ? 'selected' : ''}>Pending</option>
+                            <option value="In Progress" ${task.status === 'In Progress' ? 'selected' : ''}>In Progress</option>
+                            <option value="Completed" ${task.status === 'Completed' ? 'selected' : ''}>Completed</option>
+                        </select>
+                    </div>
+                </div>
+                `;
+            }).join('');
+        }
+
+        window.updateTaskStatus = (taskId, newStatus) => {
+            const user = Auth.getCurrentUser();
+            if (!user) return;
+
+            let tasks = Storage.get('tasks') || [];
+            const taskIndex = tasks.findIndex(t => t.id === taskId);
+            
+            if (taskIndex !== -1) {
+                tasks[taskIndex].status = newStatus;
+                Storage.save('tasks', tasks);
+                renderEmployeeTasks(user.id); // Re-render to update badges and stats
+            }
+        };
+
+        window.logoutUser = () => { Auth.logout(); };
+    </script>
+</body>
+</html>
