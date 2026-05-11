@@ -11,6 +11,25 @@
     --border-color: rgba(255, 255, 255, 0.1);
     --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
     --glass-blur: blur(10px);
+    --bg-gradient: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%);
+    --input-bg: rgba(15, 23, 42, 0.6);
+    --sidebar-bg: rgba(15, 23, 42, 0.8);
+    --hover-bg: rgba(255, 255, 255, 0.05);
+    --theme-btn-bg: rgba(255, 255, 255, 0.1);
+}
+
+[data-theme="light"] {
+    --bg-color: #f8fafc;
+    --card-bg: rgba(255, 255, 255, 0.85);
+    --text-main: #0f172a;
+    --text-muted: #475569;
+    --border-color: rgba(0, 0, 0, 0.1);
+    --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.1);
+    --bg-gradient: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+    --input-bg: rgba(255, 255, 255, 0.9);
+    --sidebar-bg: rgba(255, 255, 255, 0.8);
+    --hover-bg: rgba(0, 0, 0, 0.05);
+    --theme-btn-bg: rgba(0, 0, 0, 0.1);
 }
 
 * {
@@ -27,7 +46,7 @@ body {
     display: flex;
     flex-direction: column;
     /* Optional sleek animated gradient background */
-    background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%);
+    background: var(--bg-gradient);
     background-attachment: fixed;
 }
 
@@ -92,7 +111,7 @@ p {
 .form-control {
     width: 100%;
     padding: 0.75rem 1rem;
-    background: rgba(15, 23, 42, 0.6);
+    background: var(--input-bg);
     border: 1px solid var(--border-color);
     border-radius: 8px;
     color: var(--text-main);
@@ -110,3 +129,35 @@ p {
 .text-center { text-align: center; }
 .mt-4 { margin-top: 1rem; }
 .mb-4 { margin-bottom: 1rem; }
+
+/* Floating Theme Toggle */
+.theme-toggle-fixed {
+    position: fixed;
+    bottom: 2rem;
+    right: 2rem;
+    z-index: 1000;
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: var(--card-bg);
+    color: var(--text-main);
+    border: 1px solid var(--border-color);
+    box-shadow: var(--glass-shadow);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 1.25rem;
+    transition: all 0.3s ease;
+    backdrop-filter: var(--glass-blur);
+    -webkit-backdrop-filter: var(--glass-blur);
+}
+
+.theme-toggle-fixed:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 40px 0 rgba(0, 0, 0, 0.4);
+}
+
+[data-theme="light"] .theme-toggle-fixed:hover {
+    box-shadow: 0 12px 40px 0 rgba(0, 0, 0, 0.15);
+}

@@ -6,6 +6,8 @@
     <title>Admin Dashboard - Task Work Allocation System</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="css/style.css">
+    <script src="js/theme.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         /* Dashboard specific layout */
         .layout-container {
@@ -15,7 +17,7 @@
 
         .sidebar {
             width: 250px;
-            background: rgba(15, 23, 42, 0.8);
+            background: var(--sidebar-bg);
             backdrop-filter: var(--glass-blur);
             border-right: 1px solid var(--border-color);
             padding: 2rem 1rem;
@@ -146,10 +148,18 @@
                 </div>
             </div>
 
-            <div class="recent-section">
-                <h2>Recent Activity</h2>
-                <div class="glass-panel">
-                    <p style="text-align: center; color: var(--text-muted);">Recent tasks will appear here.</p>
+            <div class="recent-section" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 2rem;">
+                <div>
+                    <h2>Task Status Breakdown</h2>
+                    <div class="glass-panel" style="display: flex; justify-content: center; align-items: center; min-height: 300px;">
+                        <canvas id="taskStatusChart" style="max-width: 250px; max-height: 250px;"></canvas>
+                    </div>
+                </div>
+                <div>
+                    <h2>Recent Activity</h2>
+                    <div class="glass-panel" style="min-height: 300px; display: flex; align-items: center; justify-content: center;">
+                        <p style="text-align: center; color: var(--text-muted);">Recent tasks will appear here.</p>
+                    </div>
                 </div>
             </div>
         </main>
@@ -177,6 +187,48 @@
             document.getElementById('completedTasks').textContent = completed.length;
             document.getElementById('pendingTasks').textContent = tasks.length - completed.length;
             document.getElementById('totalEmployees').textContent = employees.length;
+
+            // Render Chart
+            const inProgress = tasks.filter(t => t.status === 'In Progress').length;
+            const pending = tasks.filter(t => t.status === 'Pending').length;
+            const completedCount = completed.length;
+
+            // If there are no tasks, show a gray placeholder
+            const chartData = tasks.length > 0 ? [completedCount, inProgress, pending] : [1];
+            const chartColors = tasks.length > 0 ? ['#10b981', '#3b82f6', '#f59e0b'] : ['#e2e8f0'];
+            const chartLabels = tasks.length > 0 ? ['Completed', 'In Progress', 'Pending'] : ['No Tasks'];
+
+            const ctx = document.getElementById('taskStatusChart').getContext('2d');
+            const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+            
+            new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: chartLabels,
+                    datasets: [{
+                        data: chartData,
+                        backgroundColor: chartColors,
+                        borderWidth: 0,
+                        hoverOffset: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    cutout: '70%',
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                color: isDark ? '#f8fafc' : '#475569',
+                                padding: 20,
+                                font: {
+                                    family: "'Inter', sans-serif"
+                                }
+                            }
+                        }
+                    }
+                }
+            });
         });
 
         window.logoutUser = () => {

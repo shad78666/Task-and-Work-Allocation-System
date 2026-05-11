@@ -6,10 +6,11 @@
     <title>Employee Dashboard - Task Work Allocation System</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="css/style.css">
+    <script src="js/theme.js"></script>
     <style>
         /* Specific styles */
         .layout-container { display: flex; min-height: 100vh; }
-        .sidebar { width: 250px; background: rgba(15, 23, 42, 0.8); backdrop-filter: var(--glass-blur); border-right: 1px solid var(--border-color); padding: 2rem 1rem; display: flex; flex-direction: column; }
+        .sidebar { width: 250px; background: var(--sidebar-bg); backdrop-filter: var(--glass-blur); border-right: 1px solid var(--border-color); padding: 2rem 1rem; display: flex; flex-direction: column; }
         .sidebar-logo { font-size: 1.25rem; font-weight: 700; color: var(--accent-color); margin-bottom: 2rem; text-align: center; }
         .nav-link { display: block; padding: 0.75rem 1rem; color: var(--text-main); text-decoration: none; border-radius: 8px; margin-bottom: 0.5rem; transition: all 0.3s ease; }
         .nav-link:hover, .nav-link.active { background-color: var(--accent-color); color: white; }
@@ -72,7 +73,7 @@
         }
 
         .status-select {
-            background: rgba(15, 23, 42, 0.6);
+            background: var(--input-bg);
             color: var(--text-main);
             border: 1px solid var(--border-color);
             padding: 0.4rem 0.5rem;
